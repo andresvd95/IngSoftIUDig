@@ -8,8 +8,8 @@
 		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.autos-colombia</groupId>
-	<artifactId>autos-colombia</artifactId>
+	<groupId>com.autos-colombia-API</groupId>
+	<artifactId>autos-colombia-API</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>

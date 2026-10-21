@@ -1,0 +1,3 @@
+SET SQL_SAFE_UPDATES = 0;
+SET COLLATION_CONNECTION = 'utf8mb4_unicode_ci';
+ALTER DATABASE ${databaseName} CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;
