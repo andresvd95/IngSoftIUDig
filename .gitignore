@@ -1,0 +1,7 @@
+# Frontend Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Configuración local utilizada para validar Docker
+.docker-build-config/
