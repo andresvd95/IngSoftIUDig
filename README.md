@@ -4,10 +4,6 @@ Sistema de información para apoyar la operación diaria del parqueadero **Autos
 
 El proyecto hace parte de la asignatura Ingeniería de Software de la Institución Universitaria Digital de Antioquia. La primera iteración se enfoca en la gestión de entradas y salidas de vehículos.
 
-## Autor
-
-**Andrés VD**
-
 ## Alcance de la primera iteración
 
 La solución se proyecta para administrar:
@@ -136,7 +132,7 @@ docker compose up --build -d
 
 Para consultar los registros usa `docker compose logs -f frontend`; para detener el contenedor usa `docker compose down`.
 
-Las vistas operativas usan datos simulados hasta integrar la API de Jorge. Las capturas recibidas de Stitch se conservan en `docs/mockups/`.
+Las vistas operativas usan datos simulados hasta integrar la API del backend. Las capturas recibidas de Stitch se conservan en `docs/mockups/`.
 
 ## Próximos entregables de la iteración 1
 
