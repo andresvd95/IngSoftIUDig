@@ -1,5 +1,7 @@
 package com.autoscolombia.parkingsession.handler.impl;
 
+import com.autoscolombia.operator.service.OperatorDomainService;
+import com.autoscolombia.operator.service.domain.Operator;
 import com.autoscolombia.parkingsession.handler.ParkingSessionRegisterEntryHandler;
 import com.autoscolombia.parkingsession.service.ParkingSessionDomainService;
 import com.autoscolombia.parkingsession.service.domain.ParkingSession;
@@ -18,14 +20,20 @@ public class ParkingSessionRegisterEntryHandlerImpl implements ParkingSessionReg
     private final ParkingSessionDomainService parkingSessionDomainService;
     private final VehicleDomainService vehicleDomainService;
     private final ParkingSpotDomainService parkingSpotDomainService;
+    private final OperatorDomainService operatorDomainService;
 
     @Override
     public ParkingSession registerEntry(ParkingSession session) {
 
         ParkingSpot loadedSpot = validateSpot(session);
         validateVehicle(session);
-        session.registerEntry();
-        ParkingSession savedSession = parkingSessionDomainService.save(session);
+        Operator ingressOperator = operatorDomainService.findById(session.getEntryOperatorId())
+                .orElseThrow(() -> new RuntimeException("No existe el operador ingresado."));
+
+        ParkingSession sessionToSave = session.registerEntry().toBuilder()
+                .entryOperator(ingressOperator)
+                .build();
+        ParkingSession savedSession = parkingSessionDomainService.save(sessionToSave);
         parkingSpotDomainService.switchToUnavailable(loadedSpot);
 
         return parkingSessionDomainService.findById(savedSession.getId())

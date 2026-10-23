@@ -72,4 +72,10 @@ public class ParkingSession extends Audit {
                 .map(Operator::getId)
                 .orElse(null);
     }
+
+    public Long getEntryOperatorId() {
+        return Optional.ofNullable(entryOperator)
+                .map(Operator::getId)
+                .orElse(null);
+    }
 }
