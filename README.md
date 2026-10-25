@@ -153,6 +153,8 @@ Para consultar los registros usa `docker compose logs -f frontend`; para detener
 
 Las vistas operativas usan datos simulados hasta integrar la API del backend. Las capturas recibidas de Stitch se conservan en `docs/mockups/`.
 
+El documento entregable de la actividad está disponible en [EA1 - documento de entrega](docs/Henao_Juan_David_Uribe_Jorge_Eliecer_Valencia_Santiago_Andres_EA1.pdf).
+
 ## Próximos entregables de la iteración 1
 
 - Requisitos funcionales y no funcionales.
