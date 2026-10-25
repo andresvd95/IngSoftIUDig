@@ -105,6 +105,25 @@ El frontend muestra información simulada mientras se acuerda e implementa el co
 
 Las migraciones de Flyway se aplican al iniciar la aplicación.
 
+## API disponible
+
+Con el backend en ejecución, los endpoints actualmente disponibles son:
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/vehicle-type` | Consulta los tipos de vehículo. |
+| `GET` | `/parking-spot` | Lista celdas de parqueo, con paginación. |
+| `POST` | `/parking-spot` | Crea o actualiza una celda. |
+| `GET` | `/parking-session` | Lista las estancias registradas, con paginación. |
+| `POST` | `/parking-session/vehicle-entry` | Registra el ingreso de un vehículo. |
+| `POST` | `/parking-session/vehicle-exit` | Registra la salida de un vehículo. |
+
+Las pruebas del backend usan una base H2 en memoria y no requieren Docker. Ejecútalas desde `autos-colombia`:
+
+```powershell
+.\mvnw.cmd test
+```
+
 ## Estructura del repositorio
 
 ```text
