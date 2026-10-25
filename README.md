@@ -155,6 +155,8 @@ Las vistas operativas usan datos simulados hasta integrar la API del backend. La
 
 El documento entregable de la actividad está disponible en [EA1 - documento de entrega](docs/Henao_Juan_David_Uribe_Jorge_Eliecer_Valencia_Santiago_Andres_EA1.pdf).
 
+Los diagramas UML incorporados a la entrega también se encuentran como anexos: [casos de uso](docs/diagrams/diagrama-casos-uso.png), [clases](docs/diagrams/diagrama-clases.png) y [paquetes](docs/diagrams/diagrama-paquetes.png).
+
 ## Próximos entregables de la iteración 1
 
 - Requisitos funcionales y no funcionales.
