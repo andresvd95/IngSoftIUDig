@@ -21,12 +21,12 @@ public interface ParkingSessionApiMapper {
     ParkingSession mapToDomain(ParkingSessionIngressCreationApi creationApi);
 
 
-    @Mapping(source = "spotId", target = "spot.id")
     @Mapping(source = "exitOperatorId", target = "exitOperator.id")
     @Mapping(target = "vehicle", ignore = true)
+    @Mapping(target = "spot", ignore = true)
+    @Mapping(target = "entryOperator", ignore = true)
     @Mapping(target = "entryTime", ignore = true)
     @Mapping(target = "exitTime", ignore = true)
-    @Mapping(target = "exitOperator", ignore = true)
     ParkingSession mapToDomain(ParkingSessionExitCreationApi creationApi);
 
     ParkingSessionViewApi mapToViewApi(ParkingSession domain);

@@ -1,5 +1,7 @@
 package com.autoscolombia.parkingsession.handler.impl;
 
+import com.autoscolombia.common.exception.BusinessRuleException;
+import com.autoscolombia.common.exception.ResourceNotFoundException;
 import com.autoscolombia.operator.service.OperatorDomainService;
 import com.autoscolombia.operator.service.domain.Operator;
 import com.autoscolombia.parkingsession.handler.ParkingSessionRegisterExitHandler;
@@ -20,15 +22,27 @@ public class ParkingSessionRegisterExitHandlerImpl implements ParkingSessionRegi
     private final ParkingSpotDomainService parkingSpotDomainService;
     private final OperatorDomainService operatorDomainService;
 
+    /**
+     * Cierra una estancia. La estancia se carga con SELECT ... FOR UPDATE, se valida que siga abierta
+     * (sin salida registrada) y se libera la celda REAL de esa estancia, no la que envie el cliente.
+     */
     @Override
-    public ParkingSession registerExit(ParkingSession session) {
+    public ParkingSession registerExit(ParkingSession request) {
 
-        ParkingSpot spotToRelease = parkingSpotDomainService.findById(session.getSpotId())
-                .orElseThrow(() -> new RuntimeException("No existe la celda ingresada."));
-        Operator exitOperator = operatorDomainService.findById(session.getExitOperatorId())
-                .orElseThrow(() -> new RuntimeException("No existe el operador ingresado."));
+        ParkingSession storedSession = parkingSessionDomainService.findByIdForUpdate(request.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe una estancia con el id " + request.getId() + ": no hay ingreso que cerrar."));
 
-        ParkingSession sessionToSave = session.registerExit().toBuilder()
+        if (storedSession.getExitTime() != null) {
+            throw new BusinessRuleException("La estancia ya fue cerrada: el vehículo ya registró su salida.");
+        }
+
+        Operator exitOperator = operatorDomainService.findById(request.getExitOperatorId())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe el operador ingresado."));
+        ParkingSpot spotToRelease = parkingSpotDomainService.findByIdForUpdate(storedSession.getSpotId())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe la celda de la estancia."));
+
+        ParkingSession sessionToSave = storedSession.registerExit().toBuilder()
                 .exitOperator(exitOperator)
                 .build();
 
@@ -36,7 +50,6 @@ public class ParkingSessionRegisterExitHandlerImpl implements ParkingSessionRegi
         parkingSpotDomainService.switchToAvailable(spotToRelease);
 
         return parkingSessionDomainService.findById(savedSession.getId())
-                .orElseThrow(() -> new RuntimeException("Error al consultar la sesion guardada."));
+                .orElseThrow(() -> new ResourceNotFoundException("Error al consultar la sesion guardada."));
     }
-
 }

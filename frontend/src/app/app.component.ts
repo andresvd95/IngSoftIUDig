@@ -1,24 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { ApiService, SessionDto, SpotDto, VehicleDto, errorMessage } from './api.service';
 
-type View = 'login' | 'dashboard' | 'entry' | 'exit' | 'sessions' | 'spots' | 'incidents' | 'detail';
-type SpotStatus = 'Disponible' | 'Ocupada' | 'Fuera de servicio';
+type View = 'login' | 'dashboard' | 'entry' | 'exit' | 'sessions' | 'history' | 'spots' | 'incidents' | 'detail';
 
+/** Estancia tal como la muestra la interfaz (derivada de la respuesta de la API). */
 interface Session {
   id: number;
+  vehicleId: number;
   plate: string;
   vehicle: string;
   customer: string;
   spot: string;
   enteredAt: string;
-  incidents: number;
-}
-
-interface ParkingSpot {
-  code: string;
-  type: string;
-  status: SpotStatus;
+  exitedAt: string | null;
+  operator: string;
 }
 
 interface Incident {
@@ -31,6 +29,11 @@ interface Incident {
   createdAt: string;
 }
 
+const INCIDENTS_KEY = 'ac.incidents';
+const normalizePlate = (value: string): string => value.replace(/[\s-]/g, '').toUpperCase();
+const formatDate = (iso: string): string =>
+  new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
 @Component({
   selector: 'ac-root',
   imports: [CommonModule, ReactiveFormsModule],
@@ -38,39 +41,40 @@ interface Incident {
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  readonly operatorName = 'Carlos Gomez';
+  readonly operatorInitials = 'CG';
+  readonly today = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+
   readonly view = signal<View>('dashboard');
   readonly notice = signal('');
+  readonly noticeIsError = signal(false);
+  readonly loading = signal(false);
   readonly menuOpen = signal(false);
-  readonly plateSearched = signal(false);
+  readonly foundVehicle = signal<VehicleDto | null>(null);
+  readonly vehicleLookupError = signal('');
   readonly entryComplete = signal(false);
+  readonly exitSearched = signal(false);
   readonly selectedSession = signal<Session | null>(null);
   readonly incidentTarget = signal<Session | null>(null);
-  readonly incidents = signal<Incident[]>([
-    { id: 1, sessionId: 2, plate: 'JKL 45F', spot: 'M-01', category: 'Observación', description: 'Espejo izquierdo con rayón al ingreso.', createdAt: '21 oct, 08:12' }
-  ]);
+  readonly incidents = signal<Incident[]>(this.loadIncidents());
 
-  readonly sessions = signal<Session[]>([
-    { id: 1, plate: 'ABC 123', vehicle: 'Chevrolet Onix', customer: 'Laura Gómez', spot: 'A-01', enteredAt: '21 oct, 07:42', incidents: 0 },
-    { id: 2, plate: 'JKL 45F', vehicle: 'Yamaha FZ 2.0', customer: 'Carlos Pérez', spot: 'M-01', enteredAt: '21 oct, 08:10', incidents: 1 },
-    { id: 3, plate: 'MNO 789', vehicle: 'Mazda 2', customer: 'Sofía Ramírez', spot: 'A-03', enteredAt: '21 oct, 08:25', incidents: 0 }
-  ]);
+  /** Datos que provienen del backend (fuente de verdad: base de datos). */
+  readonly sessions = signal<Session[]>([]);
+  readonly history = signal<Session[]>([]);
+  readonly spots = signal<SpotDto[]>([]);
 
-  readonly spots = signal<ParkingSpot[]>([
-    { code: 'A-01', type: 'Automóvil', status: 'Ocupada' },
-    { code: 'A-02', type: 'Automóvil', status: 'Disponible' },
-    { code: 'A-03', type: 'Automóvil', status: 'Ocupada' },
-    { code: 'A-04', type: 'Automóvil', status: 'Disponible' },
-    { code: 'M-01', type: 'Motocicleta', status: 'Ocupada' },
-    { code: 'M-02', type: 'Motocicleta', status: 'Disponible' },
-    { code: 'M-03', type: 'Motocicleta', status: 'Fuera de servicio' }
-  ]);
-
-  readonly availableSpots = computed(() => this.spots().filter((spot) => spot.status === 'Disponible'));
-  readonly occupiedSpots = computed(() => this.spots().filter((spot) => spot.status === 'Ocupada'));
+  readonly availableSpots = computed(() => this.spots().filter((spot) => spot.available));
+  readonly occupiedSpots = computed(() => this.spots().filter((spot) => !spot.available));
+  /** Celdas libres compatibles con el tipo del vehículo encontrado. */
+  readonly entrySpots = computed(() => {
+    const typeId = this.foundVehicle()?.vehicleType?.id;
+    return this.availableSpots().filter((spot) => !typeId || spot.vehicleType?.id === typeId);
+  });
   readonly selectedSessionIncidents = computed(() => {
     const session = this.selectedSession();
     return session ? this.incidents().filter((incident) => incident.sessionId === session.id) : [];
   });
+
   readonly entryForm = new FormGroup({
     plate: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(5)] }),
     spot: new FormControl('', { nonNullable: true, validators: Validators.required }),
@@ -84,30 +88,83 @@ export class AppComponent {
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(500)] })
   });
 
+  constructor(private readonly api: ApiService) {
+    this.refresh();
+  }
+
+  incidentCount(sessionId: number): number {
+    return this.incidents().filter((incident) => incident.sessionId === sessionId).length;
+  }
+
+  /** Recarga estancias activas, historial y celdas desde el backend. */
+  refresh(after?: () => void): void {
+    this.loading.set(true);
+    forkJoin({ active: this.api.getActiveSessions(), history: this.api.getHistory(), spots: this.api.getSpots() }).subscribe({
+      next: ({ active, history, spots }) => {
+        this.sessions.set(active.map((dto) => this.toSession(dto)));
+        this.history.set(history.content.map((dto) => this.toSession(dto)));
+        this.spots.set(spots.content);
+        this.loading.set(false);
+        after?.();
+      },
+      error: (error: unknown) => {
+        this.loading.set(false);
+        this.fail(errorMessage(error));
+      }
+    });
+  }
+
   navigate(view: View): void {
     this.view.set(view);
     this.menuOpen.set(false);
     this.notice.set('');
     if (view !== 'entry') this.entryComplete.set(false);
+    if (view !== 'exit' && view !== 'detail') this.exitSearched.set(false);
+    if (view !== 'login') this.refresh();
   }
 
   searchVehicle(): void {
     const plate = this.entryForm.controls.plate.value.trim().toUpperCase();
     this.entryForm.controls.plate.setValue(plate);
-    this.plateSearched.set(this.entryForm.controls.plate.valid);
+    this.foundVehicle.set(null);
+    this.vehicleLookupError.set('');
+    this.entryForm.controls.spot.setValue('');
+    if (this.entryForm.controls.plate.invalid) {
+      this.entryForm.controls.plate.markAsTouched();
+      return;
+    }
+    this.api.findVehicleByPlate(plate).subscribe({
+      next: (vehicle) => {
+        this.foundVehicle.set(vehicle);
+        if (this.sessions().some((session) => session.vehicleId === vehicle.id)) {
+          this.vehicleLookupError.set('Este vehículo ya se encuentra dentro del parqueadero.');
+        }
+      },
+      error: (error: unknown) => this.vehicleLookupError.set(errorMessage(error))
+    });
   }
 
   registerEntry(): void {
-    if (this.entryForm.invalid || !this.plateSearched()) {
+    const vehicle = this.foundVehicle();
+    if (this.entryForm.invalid || !vehicle) {
       this.entryForm.markAllAsTouched();
       return;
     }
-    const plate = this.entryForm.controls.plate.value;
-    const spot = this.entryForm.controls.spot.value;
-    this.sessions.update((items) => [{ id: Date.now(), plate, vehicle: 'Vehículo registrado', customer: 'Cliente por confirmar', spot, enteredAt: 'Ahora', incidents: 0 }, ...items]);
-    this.spots.update((items) => items.map((item) => item.code === spot ? { ...item, status: 'Ocupada' } : item));
-    this.entryComplete.set(true);
-    this.notice.set(`Entrada registrada: ${plate} fue asignado a la celda ${spot}.`);
+    const spotId = Number(this.entryForm.controls.spot.value);
+    this.api.registerEntry(vehicle.id, spotId).subscribe({
+      next: (dto) => {
+        this.entryComplete.set(true);
+        this.foundVehicle.set(null);
+        this.entryForm.reset();
+        this.refresh(() => this.success(`Entrada registrada: ${dto.vehicle.licensePlate} fue asignado a la celda ${dto.spot.spotNumber}.`));
+      },
+      // Rechazos del backend: vehículo duplicado, celda ocupada, tipo incompatible...
+      error: (error: unknown) => {
+        const message = errorMessage(error);
+        this.fail(message);
+        this.refresh(() => this.fail(message));
+      }
+    });
   }
 
   searchExit(): void {
@@ -115,20 +172,37 @@ export class AppComponent {
     const plate = this.exitForm.controls.plate.value.trim().toUpperCase();
     if (this.exitForm.invalid) {
       this.selectedSession.set(null);
+      this.exitSearched.set(false);
       return;
     }
     this.exitForm.controls.plate.setValue(plate);
-    this.selectedSession.set(this.sessions().find((session) => session.plate === plate) ?? null);
+    this.api.getActiveSessions().subscribe({
+      next: (active) => {
+        this.sessions.set(active.map((dto) => this.toSession(dto)));
+        this.selectedSession.set(this.sessions().find((session) => normalizePlate(session.plate) === normalizePlate(plate)) ?? null);
+        this.exitSearched.set(true);
+      },
+      error: (error: unknown) => this.fail(errorMessage(error))
+    });
   }
 
   registerExit(): void {
     const session = this.selectedSession();
     if (!session) return;
-    this.sessions.update((items) => items.filter((item) => item.id !== session.id));
-    this.spots.update((items) => items.map((item) => item.code === session.spot ? { ...item, status: 'Disponible' } : item));
-    this.notice.set(`Salida registrada: la celda ${session.spot} quedó disponible.`);
-    this.selectedSession.set(null);
-    this.exitForm.reset();
+    this.api.registerExit(session.id).subscribe({
+      next: (dto) => {
+        this.selectedSession.set(null);
+        this.exitSearched.set(false);
+        this.exitForm.reset();
+        // La estancia pasa al historial (persistido en el backend) y su celda real queda libre.
+        this.refresh(() => this.success(`Salida registrada: la celda ${dto.spot.spotNumber} quedó disponible.`));
+      },
+      error: (error: unknown) => {
+        const message = errorMessage(error);
+        this.selectedSession.set(null);
+        this.refresh(() => this.fail(message));
+      }
+    });
   }
 
   addIncident(session: Session): void {
@@ -149,11 +223,11 @@ export class AppComponent {
       spot: session.spot,
       category: this.incidentForm.controls.category.value,
       description: this.incidentForm.controls.description.value.trim(),
-      createdAt: 'Ahora'
+      createdAt: formatDate(new Date().toISOString())
     };
     this.incidents.update((items) => [incident, ...items]);
-    this.sessions.update((items) => items.map((item) => item.id === session.id ? { ...item, incidents: item.incidents + 1 } : item));
-    this.notice.set(`Novedad registrada para ${session.plate}.`);
+    this.persistIncidents();
+    this.success(`Novedad registrada para ${session.plate}.`);
     this.incidentTarget.set(null);
   }
 
@@ -163,7 +237,49 @@ export class AppComponent {
   }
 
   showIncidentSession(sessionId: number): void {
-    const session = this.sessions().find((item) => item.id === sessionId);
+    const session = [...this.sessions(), ...this.history()].find((item) => item.id === sessionId);
     if (session) this.showDetails(session);
+  }
+
+  private toSession(dto: SessionDto): Session {
+    const vehicle = [dto.vehicle.brand, dto.vehicle.model].filter(Boolean).join(' ') || 'Vehículo registrado';
+    return {
+      id: dto.id,
+      vehicleId: dto.vehicle.id,
+      plate: dto.vehicle.licensePlate,
+      vehicle,
+      customer: dto.vehicle.customer?.name ?? 'Sin cliente',
+      spot: dto.spot.spotNumber,
+      enteredAt: formatDate(dto.entryTime),
+      exitedAt: dto.exitTime ? formatDate(dto.exitTime) : null,
+      operator: dto.entryOperator.name
+    };
+  }
+
+  private success(message: string): void {
+    this.noticeIsError.set(false);
+    this.notice.set(message);
+  }
+
+  private fail(message: string): void {
+    this.noticeIsError.set(true);
+    this.notice.set(message);
+  }
+
+  // Las novedades aún no tienen endpoint en el backend: se conservan en el navegador (localStorage).
+  private loadIncidents(): Incident[] {
+    try {
+      return JSON.parse(localStorage.getItem(INCIDENTS_KEY) ?? '[]') as Incident[];
+    } catch {
+      return [];
+    }
+  }
+
+  private persistIncidents(): void {
+    try {
+      localStorage.setItem(INCIDENTS_KEY, JSON.stringify(this.incidents()));
+    } catch {
+      /* almacenamiento no disponible: se mantiene solo en memoria */
+    }
   }
 }

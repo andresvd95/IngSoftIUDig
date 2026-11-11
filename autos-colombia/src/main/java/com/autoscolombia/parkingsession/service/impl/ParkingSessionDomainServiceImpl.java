@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,6 +30,11 @@ public class ParkingSessionDomainServiceImpl implements ParkingSessionDomainServ
     }
 
     @Override
+    public Optional<ParkingSession> findByIdForUpdate(Long id) {
+        return parkingSessionDatabaseService.findByIdForUpdate(id);
+    }
+
+    @Override
     public boolean existsByVehicleIdAndNullExitTime(Long vehicleId) {
         return parkingSessionDatabaseService.existsByVehicleIdAndNullExitTime(vehicleId);
     }
@@ -36,5 +42,15 @@ public class ParkingSessionDomainServiceImpl implements ParkingSessionDomainServ
     @Override
     public Page<ParkingSession> findAll(Pageable pageable) {
         return parkingSessionDatabaseService.findAll(pageable);
+    }
+
+    @Override
+    public Page<ParkingSession> findHistory(Pageable pageable) {
+        return parkingSessionDatabaseService.findHistory(pageable);
+    }
+
+    @Override
+    public List<ParkingSession> findActive() {
+        return parkingSessionDatabaseService.findActive();
     }
 }

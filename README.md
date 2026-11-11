@@ -23,7 +23,7 @@ Actualmente el repositorio contiene la base técnica inicial del backend, el mod
 - Migraciones de base de datos administradas con Flyway.
 - Contenedor de MySQL mediante Docker Compose.
 - Modelo entidad-relación, modelo físico y diagrama de arquitectura en formato PNG.
-- Cliente web Angular para demostrar los flujos de entrada, salida, vehículos dentro y estado de celdas con datos simulados.
+- Cliente web Angular integrado con la API de Spring Boot: entradas, salidas, vehículos dentro, historial y estado de celdas se persisten en MySQL.
 
 La integración del frontend con los endpoints reales y las funcionalidades completas de la iteración dependen del contrato de API del backend.
 
@@ -77,7 +77,7 @@ docker compose up --build -d
 
 Abre `http://localhost:4200`. El contenedor del frontend tiene un límite de 256 MB de memoria y medio núcleo de CPU. Para ver sus registros usa `docker compose logs -f frontend`; para detenerlo ejecuta `docker compose down`.
 
-El frontend muestra información simulada mientras se acuerda e implementa el contrato de la API con el backend.
+El frontend consume la API real (`/api` → backend) y los datos persisten en MySQL. El stack completo (MySQL + backend + frontend) se levanta con el mismo comando; el backend aplica las migraciones Flyway al iniciar y expone el puerto `8080`.
 
 1. Inicie MySQL desde la carpeta `autos-colombia`:
 
@@ -114,9 +114,12 @@ Con el backend en ejecución, los endpoints actualmente disponibles son:
 | `GET` | `/vehicle-type` | Consulta los tipos de vehículo. |
 | `GET` | `/parking-spot` | Lista celdas de parqueo, con paginación. |
 | `POST` | `/parking-spot` | Crea o actualiza una celda. |
+| `GET` | `/vehicle?licensePlate=` | Busca un vehículo por placa (404 si no está registrado). |
 | `GET` | `/parking-session` | Lista las estancias registradas, con paginación. |
-| `POST` | `/parking-session/vehicle-entry` | Registra el ingreso de un vehículo. |
-| `POST` | `/parking-session/vehicle-exit` | Registra la salida de un vehículo. |
+| `GET` | `/parking-session/active` | Vehículos actualmente dentro (estancias abiertas). |
+| `GET` | `/parking-session/history` | Historial de estancias cerradas, con paginación. |
+| `POST` | `/parking-session/vehicle-entry` | Registra el ingreso. Rechaza (409) vehículo ya dentro, celda ocupada o tipo incompatible. |
+| `POST` | `/parking-session/vehicle-exit` | Cierra la estancia (`id`, `exitOperatorId`) y libera su celda real. Rechaza sin ingreso abierto (404/409). |
 
 Las pruebas del backend usan una base H2 en memoria y no requieren Docker. Ejecútalas desde `autos-colombia`:
 
@@ -148,7 +151,7 @@ Desde la raíz del repositorio se inicia con:
 ```powershell
 docker compose up --build -d
 ```
-
+Las vistas operativas consumen la API del backend; solo las novedades se guardan temporalmente en el navegador (`localStorage`) hasta contar con su endpoint. Las capturas recibidas de Stitch se conservan en `docs/mockups/`. Las historias de usuario corregidas están en [docs/HISTORIAS-DE-USUARIO.md](docs/HISTORIAS-DE-USUARIO.md).
 Para consultar los registros usa `docker compose logs -f frontend`; para detener el contenedor usa `docker compose down`.
 
 Las vistas operativas usan datos simulados hasta integrar la API del backend. Las capturas recibidas de Stitch se conservan en `docs/mockups/`.

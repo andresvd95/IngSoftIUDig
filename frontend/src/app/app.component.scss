@@ -47,3 +47,5 @@ input,select { border-color: #cbd5e1; border-radius: 6px; min-height: 44px; } in
   .table-wrap td:nth-child(5)::before { content: "NOVEDADES"; }
   .table-wrap td:nth-child(2) { grid-column: span 2; }
 }
+.notice.error { background: #fee2e2; border-color: #fca5a5; color: #7f1d1d; }
+button:disabled { cursor: not-allowed; opacity: .55; }

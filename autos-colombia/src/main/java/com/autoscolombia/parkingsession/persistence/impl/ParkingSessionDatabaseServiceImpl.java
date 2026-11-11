@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -41,6 +42,27 @@ public class ParkingSessionDatabaseServiceImpl implements ParkingSessionDatabase
     public Optional<ParkingSession> findById(Long id) {
         return parkingSessionRepository.findById(id)
                 .map(mapper::mapToDomain);
+    }
+
+    @Override
+    public Optional<ParkingSession> findByIdForUpdate(Long id) {
+        return parkingSessionRepository.findByIdForUpdate(id)
+                .map(mapper::mapToDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ParkingSession> findHistory(Pageable pageable) {
+        return parkingSessionRepository.findByExitTimeIsNotNull(pageable)
+                .map(mapper::mapToDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParkingSession> findActive() {
+        return parkingSessionRepository.findByExitTimeIsNullOrderByEntryTimeDesc().stream()
+                .map(mapper::mapToDomain)
+                .toList();
     }
 
     @Override

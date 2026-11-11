@@ -14,4 +14,6 @@ public interface ParkingSpotDatabaseService {
     ParkingSpot save(ParkingSpot parkingSpot);
 
     Optional<ParkingSpot> findById(Long id);
+
+    Optional<ParkingSpot> findByIdForUpdate(Long id);
 }

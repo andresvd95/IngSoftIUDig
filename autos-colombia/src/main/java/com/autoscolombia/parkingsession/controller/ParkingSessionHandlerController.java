@@ -7,6 +7,7 @@ import com.autoscolombia.parkingsession.controller.mapper.ParkingSessionApiMappe
 import com.autoscolombia.parkingsession.handler.ParkingSessionRegisterEntryHandler;
 import com.autoscolombia.parkingsession.handler.ParkingSessionRegisterExitHandler;
 import com.autoscolombia.parkingsession.service.domain.ParkingSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,14 +24,14 @@ public class ParkingSessionHandlerController {
     private final ParkingSessionApiMapper apiMapper;
 
     @PostMapping("vehicle-entry")
-    public ParkingSessionViewApi registerVehicleEntry(@RequestBody ParkingSessionIngressCreationApi creationApi) {
+    public ParkingSessionViewApi registerVehicleEntry(@Valid @RequestBody ParkingSessionIngressCreationApi creationApi) {
 
         ParkingSession parkingSessionToSave = apiMapper.mapToDomain(creationApi);
         return apiMapper.mapToViewApi(parkingSessionRegisterEntryHandler.registerEntry(parkingSessionToSave));
     }
 
     @PostMapping("vehicle-exit")
-    public ParkingSessionViewApi registerVehicleExit(@RequestBody ParkingSessionExitCreationApi creationApi) {
+    public ParkingSessionViewApi registerVehicleExit(@Valid @RequestBody ParkingSessionExitCreationApi creationApi) {
 
         ParkingSession parkingSessionToSave = apiMapper.mapToDomain(creationApi);
         return apiMapper.mapToViewApi(parkingSessionRegisterExitHandler.registerExit(parkingSessionToSave));

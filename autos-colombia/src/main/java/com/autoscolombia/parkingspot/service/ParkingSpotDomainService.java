@@ -13,6 +13,9 @@ public interface ParkingSpotDomainService {
 
     Optional<ParkingSpot> findById(Long id);
 
+    /** Carga la celda bloqueándola hasta el fin de la transacción. */
+    Optional<ParkingSpot> findByIdForUpdate(Long id);
+
     ParkingSpot createOrUpdate(ParkingSpot parkingSpot);
 
     ParkingSpot switchToAvailable(ParkingSpot parkingSpot);

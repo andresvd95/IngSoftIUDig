@@ -4,6 +4,7 @@ import com.autoscolombia.parkingsession.service.domain.ParkingSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ParkingSessionDatabaseService {
@@ -14,5 +15,11 @@ public interface ParkingSessionDatabaseService {
 
     Optional<ParkingSession> findById(Long id);
 
+    Optional<ParkingSession> findByIdForUpdate(Long id);
+
     Page<ParkingSession> findAll(Pageable pageable);
+
+    Page<ParkingSession> findHistory(Pageable pageable);
+
+    List<ParkingSession> findActive();
 }

@@ -48,6 +48,12 @@ public class ParkingSpotDatabaseServiceImpl implements ParkingSpotDatabaseServic
                 .map(mapper::mapToDomain);
     }
 
+    @Override
+    public Optional<ParkingSpot> findByIdForUpdate(Long id) {
+        return parkingSpotRepository.findByIdForUpdate(id)
+                .map(mapper::mapToDomain);
+    }
+
     private ParkingSpotEntity computeDomainToSave(ParkingSpot spot) {
 
         if (spot.getId() == null) {

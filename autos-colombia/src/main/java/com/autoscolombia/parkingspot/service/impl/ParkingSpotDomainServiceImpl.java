@@ -30,6 +30,11 @@ public class ParkingSpotDomainServiceImpl implements ParkingSpotDomainService {
     }
 
     @Override
+    public Optional<ParkingSpot> findByIdForUpdate(Long id) {
+        return parkingSpotDatabaseService.findByIdForUpdate(id);
+    }
+
+    @Override
     public ParkingSpot createOrUpdate(ParkingSpot parkingSpot) {
         return parkingSpotDatabaseService.save(parkingSpot);
     }
