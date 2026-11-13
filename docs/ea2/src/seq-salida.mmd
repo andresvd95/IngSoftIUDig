@@ -1,0 +1,21 @@
+sequenceDiagram
+    autonumber
+    actor Op as Operador
+    participant UI as Angular (Cliente web)
+    participant API as ParkingSessionHandlerController
+    participant H as RegisterExitHandler
+    participant DB as Repositorios JPA / MySQL
+    Op->>UI: Selecciona estancia activa y confirma salida
+    UI->>API: POST /parking-session/vehicle-exit
+    API->>H: registerExit(id, operador)
+    H->>DB: Estancia FOR UPDATE
+    alt Estancia inexistente
+        API-->>UI: 404 Sin ingreso que cerrar
+    else Estancia ya cerrada
+        API-->>UI: 409 Ya registró salida
+    else Estancia abierta
+        H->>DB: Celda real FOR UPDATE
+        H->>DB: Guardar salida y liberar celda
+        API-->>UI: 200 estancia cerrada
+        UI-->>Op: Pasa al historial
+    end

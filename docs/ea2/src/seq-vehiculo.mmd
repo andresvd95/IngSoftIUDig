@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    actor Op as Operador
+    participant UI as Angular (vista Clientes)
+    participant V as VehicleController
+    participant S as VehicleDomainService
+    participant DB as Repositorios JPA / MySQL
+    Op->>UI: Registra vehículo de un cliente
+    UI->>V: POST /vehicle
+    V->>S: create(vehicle)
+    S->>DB: Buscar cliente y tipo de vehículo
+    alt Cliente o tipo inexistente
+        V-->>UI: 404 No existe
+    else Existen
+        S->>DB: Buscar placa
+        alt Placa duplicada
+            V-->>UI: 409 Placa ya registrada
+        else Placa nueva
+            S->>DB: Guardar vehículo
+            V-->>UI: 200 vehículo creado
+            UI-->>Op: Vehículo asociado al cliente
+        end
+    end

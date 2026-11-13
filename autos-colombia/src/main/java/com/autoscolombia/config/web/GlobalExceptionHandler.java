@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponseApi> handleIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT,
-                "La operación entra en conflicto con otra en curso (vehículo o celda ya ocupados).", request);
+                "La operación entra en conflicto con otra en curso o con datos ya existentes.", request);
     }
 
     @ExceptionHandler(PessimisticLockingFailureException.class)

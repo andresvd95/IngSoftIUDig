@@ -9,7 +9,8 @@ import java.io.Serial;
 import java.util.Set;
 
 @Entity
-@Table(name = "customer")
+@Table(name = "customer", uniqueConstraints = @UniqueConstraint(
+        name = "uq_customer_identification", columnNames = {"identification_type", "identification_number"}))
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Builder(toBuilder = true)

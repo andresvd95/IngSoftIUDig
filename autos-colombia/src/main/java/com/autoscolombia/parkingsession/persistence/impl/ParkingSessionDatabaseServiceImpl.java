@@ -39,6 +39,30 @@ public class ParkingSessionDatabaseServiceImpl implements ParkingSessionDatabase
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existsOpenBySpotId(Long spotId) {
+        return parkingSessionRepository.existsBySpotIdAndExitTimeIsNull(spotId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsAnyBySpotId(Long spotId) {
+        return parkingSessionRepository.existsBySpotId(spotId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsOpenByCustomerId(Long customerId) {
+        return parkingSessionRepository.existsByVehicleCustomerIdAndExitTimeIsNull(customerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsAnyByCustomerId(Long customerId) {
+        return parkingSessionRepository.existsByVehicleCustomerId(customerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<ParkingSession> findById(Long id) {
         return parkingSessionRepository.findById(id)
                 .map(mapper::mapToDomain);

@@ -18,6 +18,15 @@ public interface ParkingSpotDomainService {
 
     ParkingSpot createOrUpdate(ParkingSpot parkingSpot);
 
+    /** Crea una celda disponible; 409 si el numero ya existe, 404 si el tipo no existe. */
+    ParkingSpot create(ParkingSpot parkingSpot);
+
+    /** Edita numero y tipo; 404 inexistente, 409 duplicada u ocupada. */
+    ParkingSpot update(Long id, ParkingSpot changes);
+
+    /** Elimina la celda; 404 inexistente, 409 si esta ocupada o tiene historial. */
+    void delete(Long id);
+
     ParkingSpot switchToAvailable(ParkingSpot parkingSpot);
 
     ParkingSpot switchToUnavailable(ParkingSpot parkingSpot);

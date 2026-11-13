@@ -15,6 +15,10 @@ import java.util.Optional;
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpotEntity, Long>,
         JpaSpecificationExecutor<ParkingSpotEntity> {
 
+    boolean existsBySpotNumberIgnoreCase(String spotNumber);
+
+    boolean existsBySpotNumberIgnoreCaseAndIdNot(String spotNumber, Long id);
+
     /** SELECT ... FOR UPDATE: serializa la asignación simultánea de una misma celda. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from ParkingSpotEntity s where s.id = :id")

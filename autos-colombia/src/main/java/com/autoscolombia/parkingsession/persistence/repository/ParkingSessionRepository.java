@@ -36,6 +36,14 @@ public interface ParkingSessionRepository extends JpaRepository<ParkingSessionEn
 
     boolean existsByVehicleIdAndExitTimeIsNull(Long vehicleId);
 
+    boolean existsBySpotIdAndExitTimeIsNull(Long spotId);
+
+    boolean existsBySpotId(Long spotId);
+
+    boolean existsByVehicleCustomerIdAndExitTimeIsNull(Long customerId);
+
+    boolean existsByVehicleCustomerId(Long customerId);
+
     /** SELECT ... FOR UPDATE de la estancia: evita cerrarla dos veces en simultaneo. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from ParkingSessionEntity s where s.id = :id")

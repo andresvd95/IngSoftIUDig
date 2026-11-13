@@ -54,6 +54,20 @@ public class ParkingSpotDatabaseServiceImpl implements ParkingSpotDatabaseServic
                 .map(mapper::mapToDomain);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsBySpotNumber(String spotNumber, Long excludeId) {
+        return excludeId == null
+                ? parkingSpotRepository.existsBySpotNumberIgnoreCase(spotNumber)
+                : parkingSpotRepository.existsBySpotNumberIgnoreCaseAndIdNot(spotNumber, excludeId);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        parkingSpotRepository.deleteById(id);
+        parkingSpotRepository.flush();
+    }
+
     private ParkingSpotEntity computeDomainToSave(ParkingSpot spot) {
 
         if (spot.getId() == null) {

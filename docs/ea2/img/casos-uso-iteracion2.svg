@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="820" font-family="Segoe UI,Arial" font-size="14">
+<rect width="900" height="820" fill="#fff"/>
+<rect x="250" y="30" width="600" height="770" fill="#f8fafc" stroke="#0b2f5e" stroke-width="2"/>
+<text x="550" y="58" text-anchor="middle" font-weight="bold" fill="#0b2f5e" font-size="16">Sistema Autos Colombia · Iteración 2</text>
+<text x="550" y="92" text-anchor="middle" fill="#0b2f5e" font-size="13">Gestión de usuarios (clientes y vehículos)</text>
+<text x="550" y="482" text-anchor="middle" fill="#0b2f5e" font-size="13">Gestión de celdas</text>
+<line x1="130" y1="400" x2="360" y2="130" stroke="#475569"/>
+<ellipse cx="550" cy="130" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="135" text-anchor="middle">CU-01 Registrar cliente</text>
+<line x1="130" y1="400" x2="360" y2="200" stroke="#475569"/>
+<ellipse cx="550" cy="200" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="205" text-anchor="middle">CU-02 Consultar / buscar clientes</text>
+<line x1="130" y1="400" x2="360" y2="270" stroke="#475569"/>
+<ellipse cx="550" cy="270" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="275" text-anchor="middle">CU-03 Editar cliente</text>
+<line x1="130" y1="400" x2="360" y2="340" stroke="#475569"/>
+<ellipse cx="550" cy="340" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="345" text-anchor="middle">CU-04 Eliminar cliente</text>
+<line x1="130" y1="400" x2="360" y2="410" stroke="#475569"/>
+<ellipse cx="550" cy="410" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="415" text-anchor="middle">CU-05 Registrar vehículo del cliente</text>
+<line x1="130" y1="400" x2="360" y2="520" stroke="#475569"/>
+<ellipse cx="550" cy="520" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="525" text-anchor="middle">CU-06 Crear celda</text>
+<line x1="130" y1="400" x2="360" y2="590" stroke="#475569"/>
+<ellipse cx="550" cy="590" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="595" text-anchor="middle">CU-07 Editar celda</text>
+<line x1="130" y1="400" x2="360" y2="660" stroke="#475569"/>
+<ellipse cx="550" cy="660" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="665" text-anchor="middle">CU-08 Eliminar celda</text>
+<line x1="130" y1="400" x2="360" y2="730" stroke="#475569"/>
+<ellipse cx="550" cy="730" rx="190" ry="27" fill="#fff" stroke="#0b2f5e" stroke-width="1.5"/><text x="550" y="735" text-anchor="middle">CU-09 Consultar estado de celdas</text>
+<g stroke="#0b2f5e" stroke-width="2" fill="none"><circle cx="100" cy="370" r="16"/><line x1="100" y1="386" x2="100" y2="440"/><line x1="70" y1="405" x2="130" y2="405"/><line x1="100" y1="440" x2="75" y2="485"/><line x1="100" y1="440" x2="125" y2="485"/></g><text x="100" y="510" text-anchor="middle" font-weight="bold">Operador</text></svg>

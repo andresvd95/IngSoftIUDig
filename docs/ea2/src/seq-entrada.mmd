@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    actor Op as Operador
+    participant UI as Angular (Cliente web)
+    participant API as ParkingSessionHandlerController
+    participant H as RegisterEntryHandler
+    participant DB as Repositorios JPA / MySQL
+    Op->>UI: Digita placa y elige celda
+    UI->>API: POST /parking-session/vehicle-entry
+    API->>H: registerEntry(request)
+    H->>DB: Vehículo FOR UPDATE + celda FOR UPDATE
+    alt Vehículo ya dentro
+        H-->>API: BusinessRuleException
+        API-->>UI: 409 Vehículo ya dentro
+    else Celda ocupada o tipo incompatible
+        H-->>API: BusinessRuleException
+        API-->>UI: 409 Celda ocupada
+    else Ingreso válido
+        H->>DB: Guardar estancia + celda no disponible
+        H-->>API: ParkingSession
+        API-->>UI: 200 estancia creada
+        UI-->>Op: Confirmación de ingreso
+    end

@@ -13,6 +13,14 @@ public interface ParkingSessionDatabaseService {
 
     boolean existsByVehicleIdAndNullExitTime(Long vehicleId);
 
+    boolean existsOpenBySpotId(Long spotId);
+
+    boolean existsAnyBySpotId(Long spotId);
+
+    boolean existsOpenByCustomerId(Long customerId);
+
+    boolean existsAnyByCustomerId(Long customerId);
+
     Optional<ParkingSession> findById(Long id);
 
     Optional<ParkingSession> findByIdForUpdate(Long id);

@@ -1,0 +1,26 @@
+flowchart LR
+    subgraph Cliente["Cliente web (Angular)"]
+        UI["Componentes de vista<br/>Entrada · Salida · Clientes · Celdas"]
+        AS["ApiService<br/>HttpClient"]
+    end
+    subgraph API["API Spring Boot (Java 21)"]
+        direction TB
+        CT["Controllers REST<br/>parking-session · customer · vehicle · parking-spot"]
+        EX["GlobalExceptionHandler<br/>400 · 404 · 409"]
+        HD["Handlers de negocio<br/>RegisterEntry · RegisterExit"]
+        DS["Domain Services<br/>Session · Customer · Vehicle · Spot · Operator"]
+        PS["Persistence Services + Mappers<br/>Spring Data JPA"]
+    end
+    subgraph Datos["Persistencia"]
+        DB[("MySQL 8")]
+        FW["Flyway<br/>migraciones AC1.x"]
+    end
+    UI --> AS
+    AS -- "HTTP / JSON" --> CT
+    CT --> HD
+    CT --> DS
+    HD --> DS
+    DS --> PS
+    PS -- "JDBC" --> DB
+    FW -- "esquema" --> DB
+    CT -.-> EX

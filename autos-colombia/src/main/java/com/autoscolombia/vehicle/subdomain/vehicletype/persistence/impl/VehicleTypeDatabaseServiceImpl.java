@@ -20,6 +20,11 @@ public class VehicleTypeDatabaseServiceImpl implements VehicleTypeDatabaseServic
     private final VehicleTypeMapper mapper;
 
     @Override
+    public java.util.Optional<VehicleType> findById(Long id) {
+        return vehicleTypeRepository.findById(id).map(mapper::mapToDomain);
+    }
+
+    @Override
     public List<VehicleType> findAll() {
 
         return CollectionUtils.emptyIfNull(vehicleTypeRepository.findAll())

@@ -6,6 +6,30 @@ import { Observable } from 'rxjs';
 export const CURRENT_OPERATOR_ID = 1;
 
 export interface VehicleTypeDto { id: number; name: string; }
+export interface CustomerFull {
+  id: number;
+  identificationType: string;
+  identificationNumber: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+}
+export interface CustomerPayload {
+  identificationType: string;
+  identificationNumber: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+}
+export interface VehiclePayload {
+  licensePlate: string;
+  brand: string;
+  model: number;
+  color: string;
+  customerId: number;
+  vehicleTypeId: number;
+}
+export interface SpotPayload { spotNumber: string; vehicleType: { id: number }; }
 export interface CustomerDto { id: number; identificationNumber: string; name: string; }
 export interface VehicleDto {
   id: number;
@@ -41,6 +65,42 @@ export class ApiService {
 
   getSpots(): Observable<Page<SpotDto>> {
     return this.http.get<Page<SpotDto>>(`${this.base}/parking-spot`, { params: new HttpParams().set('size', 200) });
+  }
+
+  getVehicleTypes(): Observable<VehicleTypeDto[]> {
+    return this.http.get<VehicleTypeDto[]>(`${this.base}/vehicle-type`);
+  }
+
+  getCustomers(search: string): Observable<Page<CustomerFull>> {
+    let params = new HttpParams().set('size', 100);
+    if (search) params = params.set('search', search);
+    return this.http.get<Page<CustomerFull>>(`${this.base}/customer`, { params });
+  }
+  createCustomer(body: CustomerPayload): Observable<CustomerFull> {
+    return this.http.post<CustomerFull>(`${this.base}/customer`, body);
+  }
+  updateCustomer(id: number, body: CustomerPayload): Observable<CustomerFull> {
+    return this.http.put<CustomerFull>(`${this.base}/customer/${id}`, body);
+  }
+  deleteCustomer(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/customer/${id}`);
+  }
+
+  getVehiclesByCustomer(customerId: number): Observable<VehicleDto[]> {
+    return this.http.get<VehicleDto[]>(`${this.base}/vehicle`, { params: new HttpParams().set('customerId', customerId) });
+  }
+  createVehicle(body: VehiclePayload): Observable<VehicleDto> {
+    return this.http.post<VehicleDto>(`${this.base}/vehicle`, body);
+  }
+
+  createSpot(body: SpotPayload): Observable<SpotDto> {
+    return this.http.post<SpotDto>(`${this.base}/parking-spot`, body);
+  }
+  updateSpot(id: number, body: SpotPayload): Observable<SpotDto> {
+    return this.http.put<SpotDto>(`${this.base}/parking-spot/${id}`, body);
+  }
+  deleteSpot(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/parking-spot/${id}`);
   }
 
   getActiveSessions(): Observable<SessionDto[]> {

@@ -2,9 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { ApiService, SessionDto, SpotDto, VehicleDto, errorMessage } from './api.service';
+import { ApiService, CustomerFull, SessionDto, SpotDto, VehicleDto, VehicleTypeDto, errorMessage } from './api.service';
 
-type View = 'login' | 'dashboard' | 'entry' | 'exit' | 'sessions' | 'history' | 'spots' | 'incidents' | 'detail';
+type View = 'login' | 'dashboard' | 'entry' | 'exit' | 'sessions' | 'history' | 'spots' | 'customers' | 'incidents' | 'detail';
 
 /** Estancia tal como la muestra la interfaz (derivada de la respuesta de la API). */
 interface Session {
@@ -88,8 +88,166 @@ export class AppComponent {
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(500)] })
   });
 
+  // Clientes y vehículos
+  readonly customers = signal<CustomerFull[]>([]);
+  readonly customerSearch = new FormControl('', { nonNullable: true });
+  readonly customerDialog = signal<{ editing: CustomerFull | null } | null>(null);
+  readonly vehiclesTarget = signal<CustomerFull | null>(null);
+  readonly customerVehicles = signal<VehicleDto[]>([]);
+  readonly vehicleTypes = signal<VehicleTypeDto[]>([]);
+  readonly dialogError = signal('');
+  readonly customerForm = new FormGroup({
+    identificationType: new FormControl('CC', { nonNullable: true, validators: Validators.required }),
+    identificationNumber: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    name: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    email: new FormControl('', { nonNullable: true, validators: Validators.email }),
+    phone: new FormControl('', { nonNullable: true })
+  });
+  readonly vehicleForm = new FormGroup({
+    licensePlate: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(5)] }),
+    brand: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    model: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(1900)] }),
+    color: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    vehicleTypeId: new FormControl<number | null>(null, { validators: Validators.required })
+  });
+
+  // Celdas
+  readonly spotDialog = signal<{ editing: SpotDto | null } | null>(null);
+  readonly spotForm = new FormGroup({
+    spotNumber: new FormControl('', { nonNullable: true, validators: Validators.required }),
+    vehicleTypeId: new FormControl<number | null>(null, { validators: Validators.required })
+  });
+
   constructor(private readonly api: ApiService) {
     this.refresh();
+    this.api.getVehicleTypes().subscribe({ next: (types) => this.vehicleTypes.set(types), error: (e: unknown) => this.fail(errorMessage(e)) });
+  }
+
+  loadCustomers(): void {
+    this.api.getCustomers(this.customerSearch.value.trim()).subscribe({
+      next: (page) => this.customers.set(page.content),
+      error: (e: unknown) => this.fail(errorMessage(e))
+    });
+  }
+
+  openCustomerDialog(customer: CustomerFull | null): void {
+    this.dialogError.set('');
+    this.customerForm.reset({
+      identificationType: customer?.identificationType ?? 'CC',
+      identificationNumber: customer?.identificationNumber ?? '',
+      name: customer?.name ?? '',
+      email: customer?.email ?? '',
+      phone: customer?.phone ?? ''
+    });
+    this.customerDialog.set({ editing: customer });
+  }
+
+  saveCustomer(): void {
+    const dialog = this.customerDialog();
+    if (!dialog) return;
+    if (this.customerForm.invalid) {
+      this.customerForm.markAllAsTouched();
+      return;
+    }
+    const v = this.customerForm.getRawValue();
+    const body = {
+      identificationType: v.identificationType,
+      identificationNumber: v.identificationNumber.trim(),
+      name: v.name.trim(),
+      email: v.email.trim() || null,
+      phone: v.phone.trim() || null
+    };
+    const request = dialog.editing ? this.api.updateCustomer(dialog.editing.id, body) : this.api.createCustomer(body);
+    request.subscribe({
+      next: (saved) => {
+        this.customerDialog.set(null);
+        this.loadCustomers();
+        this.success(`Cliente ${saved.name} ${dialog.editing ? 'actualizado' : 'creado'}.`);
+      },
+      error: (e: unknown) => this.dialogError.set(errorMessage(e))
+    });
+  }
+
+  deleteCustomer(customer: CustomerFull): void {
+    if (!confirm(`¿Eliminar al cliente ${customer.name}?`)) return;
+    this.api.deleteCustomer(customer.id).subscribe({
+      next: () => { this.loadCustomers(); this.success(`Cliente ${customer.name} eliminado.`); },
+      error: (e: unknown) => this.fail(errorMessage(e))
+    });
+  }
+
+  openVehicles(customer: CustomerFull): void {
+    this.dialogError.set('');
+    this.customerVehicles.set([]);
+    this.vehicleForm.reset({ licensePlate: '', brand: '', model: null, color: '', vehicleTypeId: null });
+    this.vehiclesTarget.set(customer);
+    this.loadCustomerVehicles(customer.id);
+  }
+
+  private loadCustomerVehicles(customerId: number): void {
+    this.api.getVehiclesByCustomer(customerId).subscribe({
+      next: (list) => this.customerVehicles.set(list),
+      error: (e: unknown) => this.dialogError.set(errorMessage(e))
+    });
+  }
+
+  saveVehicle(): void {
+    const customer = this.vehiclesTarget();
+    if (!customer) return;
+    if (this.vehicleForm.invalid) {
+      this.vehicleForm.markAllAsTouched();
+      return;
+    }
+    const v = this.vehicleForm.getRawValue();
+    this.api.createVehicle({
+      licensePlate: normalizePlate(v.licensePlate),
+      brand: v.brand.trim(),
+      model: Number(v.model),
+      color: v.color.trim(),
+      customerId: customer.id,
+      vehicleTypeId: Number(v.vehicleTypeId)
+    }).subscribe({
+      next: (vehicle) => {
+        this.dialogError.set('');
+        this.vehicleForm.reset({ licensePlate: '', brand: '', model: null, color: '', vehicleTypeId: null });
+        this.loadCustomerVehicles(customer.id);
+        this.success(`Vehículo ${vehicle.licensePlate} registrado para ${customer.name}.`);
+      },
+      error: (e: unknown) => this.dialogError.set(errorMessage(e))
+    });
+  }
+
+  openSpotDialog(spot: SpotDto | null): void {
+    this.dialogError.set('');
+    this.spotForm.reset({ spotNumber: spot?.spotNumber ?? '', vehicleTypeId: spot?.vehicleType?.id ?? null });
+    this.spotDialog.set({ editing: spot });
+  }
+
+  saveSpot(): void {
+    const dialog = this.spotDialog();
+    if (!dialog) return;
+    if (this.spotForm.invalid) {
+      this.spotForm.markAllAsTouched();
+      return;
+    }
+    const v = this.spotForm.getRawValue();
+    const body = { spotNumber: v.spotNumber.trim(), vehicleType: { id: Number(v.vehicleTypeId) } };
+    const request = dialog.editing ? this.api.updateSpot(dialog.editing.id, body) : this.api.createSpot(body);
+    request.subscribe({
+      next: (saved) => {
+        this.spotDialog.set(null);
+        this.refresh(() => this.success(`Celda ${saved.spotNumber} ${dialog.editing ? 'actualizada' : 'creada'}.`));
+      },
+      error: (e: unknown) => this.dialogError.set(errorMessage(e))
+    });
+  }
+
+  deleteSpot(spot: SpotDto): void {
+    if (!confirm(`¿Eliminar la celda ${spot.spotNumber}?`)) return;
+    this.api.deleteSpot(spot.id).subscribe({
+      next: () => this.refresh(() => this.success(`Celda ${spot.spotNumber} eliminada.`)),
+      error: (e: unknown) => this.fail(errorMessage(e))
+    });
   }
 
   incidentCount(sessionId: number): number {
@@ -121,6 +279,7 @@ export class AppComponent {
     if (view !== 'entry') this.entryComplete.set(false);
     if (view !== 'exit' && view !== 'detail') this.exitSearched.set(false);
     if (view !== 'login') this.refresh();
+    if (view === 'customers') this.loadCustomers();
   }
 
   searchVehicle(): void {

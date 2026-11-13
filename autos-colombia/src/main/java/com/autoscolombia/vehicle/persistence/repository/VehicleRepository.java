@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,6 +23,9 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
     @EntityGraph(attributePaths = {"customer", "type"})
     @Query("select v from VehicleEntity v where upper(replace(replace(v.licensePlate, '-', ''), ' ', '')) = :plate")
     Optional<VehicleEntity> findByNormalizedPlate(@Param("plate") String plate);
+
+    @EntityGraph(attributePaths = {"customer", "type"})
+    List<VehicleEntity> findByCustomerIdOrderByLicensePlateAsc(Long customerId);
 
     /** SELECT ... FOR UPDATE: serializa los ingresos simultaneos del mismo vehiculo. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

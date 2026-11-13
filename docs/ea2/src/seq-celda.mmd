@@ -1,0 +1,20 @@
+sequenceDiagram
+    autonumber
+    actor Op as Operador
+    participant UI as Angular (vista Celdas)
+    participant P as ParkingSpotCRUDController
+    participant S as ParkingSpotDomainService
+    participant DB as ParkingSpotRepository / MySQL
+    Op->>UI: Crea, edita o elimina una celda
+    UI->>P: POST / PUT / DELETE /parking-spot
+    P->>S: createOrUpdate / delete
+    S->>DB: Celda FOR UPDATE y buscar número
+    alt Número de celda duplicado
+        P-->>UI: 409 Celda duplicada
+    else Celda ocupada (editar o eliminar)
+        P-->>UI: 409 Celda ocupada
+    else Operación válida
+        S->>DB: Persistir cambio
+        P-->>UI: 200 / 204
+        UI-->>Op: Estado de celdas actualizado
+    end

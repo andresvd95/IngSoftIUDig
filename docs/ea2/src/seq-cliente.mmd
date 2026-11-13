@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    actor Op as Operador
+    participant UI as Angular (vista Clientes)
+    participant C as CustomerController
+    participant S as CustomerDomainService
+    participant DB as CustomerRepository / MySQL
+    Op->>UI: Diligencia formulario de cliente
+    UI->>C: POST /customer
+    C->>C: Validar campos (Bean Validation)
+    alt Datos inválidos
+        C-->>UI: 400 mensajes de validación
+    else Datos válidos
+        C->>S: create(customer)
+        S->>DB: Buscar tipo + número de identificación
+        alt Cliente ya registrado
+            S-->>C: BusinessRuleException
+            C-->>UI: 409 Cliente duplicado
+        else Cliente nuevo
+            S->>DB: Guardar cliente
+            C-->>UI: 200 cliente creado
+            UI-->>Op: Cliente en el listado
+        end
+    end

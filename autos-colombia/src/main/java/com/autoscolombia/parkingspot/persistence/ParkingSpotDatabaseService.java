@@ -16,4 +16,8 @@ public interface ParkingSpotDatabaseService {
     Optional<ParkingSpot> findById(Long id);
 
     Optional<ParkingSpot> findByIdForUpdate(Long id);
+
+    boolean existsBySpotNumber(String spotNumber, Long excludeId);
+
+    void deleteById(Long id);
 }
